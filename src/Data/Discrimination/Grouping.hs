@@ -36,7 +36,7 @@ import Control.Monad.ST.Unsafe
 import Data.Complex
 import Data.Discrimination.Internal.WordMap as WordMap
 import Data.Foldable hiding (concat)
-import Data.Functor.Classes (Eq1)
+import Data.Functor.Classes (Eq1 (..), Eq2 (..))
 import Data.Functor.Compose
 import Data.Functor.Contravariant
 import Data.Functor.Contravariant.Divisible
@@ -290,3 +290,21 @@ nubWith f xs = runLazy (\p0 -> do
     mapM_ (\x -> k (f x) x) xs
   ) []
 
+-------------------------------------------------------------------------------
+-- TODO: Orphans
+-------------------------------------------------------------------------------
+
+instance Eq1 Complex where
+    liftEq eq (x :+ y) (u :+ v) = eq x u && eq y v
+
+instance (Eq a) => Eq2 ((,,) a) where
+    liftEq2 e1 e2 (x1,x2,x3) (y1,y2,y3) = x1 == y1 && e1 x2 y2 && e2 x3 y3
+
+instance (Eq a, Eq b) => Eq1 ((,,) a b) where
+    liftEq = liftEq2 (==)
+
+instance (Eq a, Eq b) => Eq2 ((,,,) a b) where
+    liftEq2 e1 e2 (x1,x2,x3,x4) (y1,y2,y3,y4) = x1 == y1 && x2 == y2 && e1 x3 y3 && e2 x4 y4
+
+instance (Eq a, Eq b, Eq c) => Eq1 ((,,,) a b c) where
+    liftEq = liftEq2 (==)

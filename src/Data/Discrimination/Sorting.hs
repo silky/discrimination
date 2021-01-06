@@ -42,6 +42,7 @@ import Data.Bits
 import Data.Discrimination.Grouping
 import Data.Discrimination.Internal
 import Data.Foldable as Foldable hiding (concat)
+import Data.Functor.Classes (Ord1 (..), Ord2 (..))
 import Data.Functor.Compose
 import Data.Functor.Contravariant
 import Data.Functor.Contravariant.Divisible
@@ -112,7 +113,7 @@ instance Monoid (Sort a) where
 -- @
 -- 'sortingCompare' x y ≡ 'compare' x y
 -- @
-class (Ord a, Grouping a => Sorting a where
+class (Ord a, Grouping a) => Sorting a where
   -- | For every strictly monotone-increasing function @f@:
   --
   -- @
@@ -382,3 +383,19 @@ toSet kvs = Set.fromDistinctAscList $ last <$> runSort sorting [ (kv, kv) | kv <
 -- This is an asymptotically faster version of 'Data.IntSet.fromList', which exploits ordered discrimination.
 toIntSet :: [Int] -> IntSet
 toIntSet kvs = IntSet.fromDistinctAscList $ last <$> runSort sorting [ (kv, kv) | kv <- kvs ]
+
+-------------------------------------------------------------------------------
+-- TODO: Orphans
+-------------------------------------------------------------------------------
+
+instance (Ord a) => Ord2 ((,,) a) where
+    liftCompare2 cmp1 cmp2 (x1,x2,x3) (y1,y2,y3) = compare x1 y1 `mappend` cmp1 x2 y2 `mappend` cmp2 x3 y3
+
+instance (Ord a, Ord b) => Ord1 ((,,) a b) where
+    liftCompare = liftCompare2 compare
+
+instance (Ord a, Ord b) => Ord2 ((,,,) a b) where
+    liftCompare2 cmp1 cmp2 (x1,x2,x3,x4) (y1,y2,y3,y4) = compare x1 y1 `mappend` compare x2 y2 `mappend` cmp1 x3 y3 `mappend` cmp2 x4 y4
+
+instance (Ord a, Ord b, Ord c) => Ord1 ((,,,) a b c) where
+    liftCompare = liftCompare2 compare
