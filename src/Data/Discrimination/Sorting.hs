@@ -77,9 +77,7 @@ mkSort f = Sort $ \xs -> case xs of
   [(_, v)] -> [[v]]
   _        -> f xs
 
-#ifndef HLINT
 type role Sort representational
-#endif
 
 instance Contravariant Sort where
   contramap f (Sort g) = Sort $ g . fmap (first f)
@@ -108,7 +106,13 @@ instance Monoid (Sort a) where
 --------------------------------------------------------------------------------
 
 -- | 'Ord' equipped with a compatible stable, ordered discriminator.
-class Grouping a => Sorting a where
+--
+-- Law:
+--
+-- @
+-- 'sortingCompare' x y ≡ 'compare' x y
+-- @
+class (Ord a, Grouping a => Sorting a where
   -- | For every strictly monotone-increasing function @f@:
   --
   -- @
@@ -187,7 +191,7 @@ instance (Sorting a, Sorting b, Sorting c, Sorting d) => Sorting (a, b, c, d)
 instance (Sorting1 f, Sorting1 g, Sorting a) => Sorting (Compose f g a) where
   sorting = getCompose `contramap` sorting1 (sorting1 sorting)
 
-class Grouping1 f => Sorting1 f  where
+class (Ord1 f, Grouping1 f) => Sorting1 f  where
   sorting1 :: Sort a -> Sort (f a)
 #ifndef HLINT
   default sorting1 :: Deciding1 Sorting f => Sort a -> Sort (f a)

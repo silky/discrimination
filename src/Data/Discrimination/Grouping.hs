@@ -36,6 +36,7 @@ import Control.Monad.ST.Unsafe
 import Data.Complex
 import Data.Discrimination.Internal.WordMap as WordMap
 import Data.Foldable hiding (concat)
+import Data.Functor.Classes (Eq1)
 import Data.Functor.Compose
 import Data.Functor.Contravariant
 import Data.Functor.Contravariant.Divisible
@@ -62,6 +63,9 @@ newtype Group a = Group
   { getGroup :: forall m b. PrimMonad m
              => (b -> m (b -> m ())) -> m (a -> b -> m ())
   } deriving Typeable
+
+-- Group is not representational, because there are no higher order roles for m.
+-- type role Group nominal
 
 instance Contravariant Group where
   contramap f m = Group $ \k -> do
@@ -124,7 +128,13 @@ hashing = contramap hash grouping
 --------------------------------------------------------------------------------
 
 -- | 'Eq' equipped with a compatible stable unordered discriminator.
-class Grouping a where
+--
+-- Law:
+--
+-- @
+-- 'groupingEq' x y ≡ (x '==' y)
+-- @
+class Eq a => Grouping a where
   -- | For every surjection @f@,
   --
   -- @
@@ -182,7 +192,7 @@ instance (Grouping a, Integral a) => Grouping (Ratio a) where
 instance (Grouping1 f, Grouping1 g, Grouping a) => Grouping (Compose f g a) where
   grouping = getCompose `contramap` grouping1 (grouping1 grouping)
 
-class Grouping1 f where
+class Eq1 f => Grouping1 f where
   grouping1 :: Group a -> Group (f a)
 #ifndef HLINT
   default grouping1 :: Deciding1 Grouping f => Group a -> Group (f a)
